@@ -917,6 +917,12 @@ function imageMimeForFile(name, mime) {
 
 /* ---------- Browser-side file helpers (used when window.stickyAPI is absent) ---------- */
 function downloadBlob(filename, blob) {
+  // A native wrapper with no browser downloads (the Android build) hands the
+  // file to the system share sheet instead — see capacitor-bridge.js.
+  if (typeof window !== 'undefined' && window.stickyShareFile) {
+    window.stickyShareFile(filename, blob).catch(err => console.warn('[download]', err));
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename;

@@ -61,7 +61,9 @@
   // Web build only: the service worker that makes the page installable and
   // lets it open offline (#60, sw.js). The desktop app loads this file from
   // file:// with window.stickyAPI set, and must never register one.
-  if ('serviceWorker' in navigator && !window.stickyAPI && /^https?:$/.test(location.protocol)) {
+  // A native wrapper (window.stickyNative, the Android build) bundles its
+  // files and has no use for one either.
+  if ('serviceWorker' in navigator && !window.stickyAPI && !window.stickyNative && /^https?:$/.test(location.protocol)) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch(err => console.warn('[sw]', err));
     });

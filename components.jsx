@@ -373,7 +373,9 @@ function MobileDemoBanner() {
   // Electron build: never show. The preload script exposes window.stickyAPI,
   // which is the same signal the rest of the app uses to gate desktop-only
   // behavior (see the browser/Electron branching in useStickyStore).
-  if (typeof window !== 'undefined' && window.stickyAPI) return null;
+  // Same for a native wrapper (the Android build sets window.stickyNative):
+  // it IS the native app.
+  if (typeof window !== 'undefined' && (window.stickyAPI || window.stickyNative)) return null;
 
   const [narrow, setNarrow] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BANNER_MAX_WIDTH

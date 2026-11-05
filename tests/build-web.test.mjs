@@ -35,6 +35,14 @@ test('the built page loads no Babel and no .jsx, and loads the bundle once', () 
   assert.ok(!fs.existsSync(path.join(out, 'vendor', 'babel.min.js')), 'Babel is not copied');
 });
 
+test('the Capacitor bridge runs before the app, so its seams exist when the store loads', () => {
+  const html = read('index.html');
+  assert.equal(html.match(/src="\.\/capacitor-bridge\.js"/g)?.length, 1);
+  assert.ok(html.indexOf('capacitor-bridge.js') < html.indexOf('app.bundle.js'));
+  assert.ok(html.indexOf('capacitor-bridge.js') < html.indexOf('serviceWorker'), 'before the service worker guard reads stickyNative');
+  assert.ok(result.precache.includes('capacitor-bridge.js'));
+});
+
 test('the bundle comes after the vendor scripts it depends on', () => {
   const html = read('index.html');
   for (const v of ['react.production.min.js', 'react-dom.production.min.js', 'markdown-it.min.js', 'mermaid.min.js']) {

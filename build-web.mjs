@@ -16,8 +16,9 @@
 //     esbuild into one classic script, app.bundle.js — not a module, so
 //     top-level names stay globals shared between the files, as before;
 //   - www/index.html is index.html with the Babel script dropped and the
-//     text/babel tags replaced by app.bundle.js;
-//   - www/sw.js precaches app.bundle.js instead of the .jsx files and Babel;
+//     text/babel tags replaced by capacitor-bridge.js + app.bundle.js (the
+//     bridge does nothing unless the page runs inside the Android app);
+//   - www/sw.js precaches those two instead of the .jsx files and Babel;
 //   - everything else the page needs (vendor/, assets/, pwa/, manifest) is
 //     copied as is.
 //
@@ -34,6 +35,7 @@ import * as esbuild from 'esbuild';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const out = path.resolve(process.argv[2] || path.join(root, 'www'));
 const BUNDLE = 'app.bundle.js';
+const BRIDGE = 'capacitor-bridge.js';
 const BABEL = 'vendor/babel.min.js';
 
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
@@ -81,7 +83,7 @@ export async function buildWeb(outDir = out) {
   html = html.replace(babelTag, () => {
     if (!first) return '';
     first = false;
-    return `<script src="./${BUNDLE}"></script>\n`;
+    return `<script src="./${BRIDGE}"></script>\n<script src="./${BUNDLE}"></script>\n`;
   });
   fs.writeFileSync(path.join(outDir, 'index.html'), html);
 
@@ -93,12 +95,12 @@ export async function buildWeb(outDir = out) {
   const entries = [...m[1].matchAll(/'([^']*)'/g)].map(x => x[1])
     .filter(p => !sources.includes(p) && p !== BABEL);
   const insertAt = entries.indexOf('index.html') + 1 || entries.length;
-  entries.splice(insertAt, 0, BUNDLE);
+  entries.splice(insertAt, 0, BRIDGE, BUNDLE);
   fs.writeFileSync(path.join(outDir, 'sw.js'),
     sw.replace(listRe, `const PRECACHE = [\n${entries.map(e => `  '${e}',`).join('\n')}\n];`));
 
   // Static files, as is. Babel stays behind: nothing in www/ loads it.
-  for (const rel of ['manifest.webmanifest', 'pwa', 'assets', 'vendor']) {
+  for (const rel of [BRIDGE, 'manifest.webmanifest', 'pwa', 'assets', 'vendor']) {
     fs.cpSync(path.join(root, rel), path.join(outDir, rel), {
       recursive: true,
       filter: (src) => path.relative(root, src) !== path.normalize(BABEL),

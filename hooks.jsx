@@ -28,16 +28,46 @@ function useStickyStore(onImportRequest) {
 
   useEffect(() => { storeRef.current = store; }, [store]);
 
+  // The store waiting for the debounced save, so it can be written at once
+  // when the page is hidden (see the visibilitychange effect below).
+  const pendingRef = useRef(null);
+
+  const writeNow = useCallback((next) => {
+    if (window.stickyAPI) {
+      window.stickyAPI.save(next).catch(err => console.warn('[save]', err));
+    } else if (window.stickyWebStore) {
+      // A native wrapper's own storage (capacitor-bridge.js in the Android build).
+      window.stickyWebStore.save(next).catch(err => console.warn('[save]', err));
+    } else {
+      try { localStorage.setItem('stickies.all', JSON.stringify(next)); } catch {}
+    }
+  }, []);
+
   const scheduleSave = useCallback((next) => {
     if (saveRef.current) clearTimeout(saveRef.current);
+    pendingRef.current = next;
     saveRef.current = setTimeout(() => {
-      if (window.stickyAPI) {
-        window.stickyAPI.save(next).catch(err => console.warn('[save]', err));
-      } else {
-        try { localStorage.setItem('stickies.all', JSON.stringify(next)); } catch {}
-      }
+      saveRef.current = null;
+      pendingRef.current = null;
+      writeNow(next);
     }, 500);
-  }, []);
+  }, [writeNow]);
+
+  // Write a pending save straight away when the page is hidden: a phone may
+  // suspend or kill a backgrounded app before the 500 ms debounce fires, and
+  // the last edit would be lost.
+  useEffect(() => {
+    const onHidden = () => {
+      if (document.visibilityState !== 'hidden' || !pendingRef.current) return;
+      clearTimeout(saveRef.current);
+      saveRef.current = null;
+      const next = pendingRef.current;
+      pendingRef.current = null;
+      writeNow(next);
+    };
+    document.addEventListener('visibilitychange', onHidden);
+    return () => document.removeEventListener('visibilitychange', onHidden);
+  }, [writeNow]);
 
   // Initial load + hydrate. Always save once after hydrate so fresh installs
   // and corrupt-file fallbacks both end up with a valid notes.json on disk.
@@ -52,6 +82,8 @@ function useStickyStore(onImportRequest) {
           if (folder) setDataFolder(folder);
           if (folder && !folder.available) return;  // never hydrate, never save
           loaded = await window.stickyAPI.load();
+        } else if (window.stickyWebStore) {
+          loaded = await window.stickyWebStore.load();
         } else {
           loaded = JSON.parse(localStorage.getItem('stickies.all') ?? '{}');
         }

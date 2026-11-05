@@ -106,11 +106,12 @@ test('index.html links the manifest', () => {
 
 // Run index.html's inline (non-babel) scripts with a stubbed browser and
 // report what they asked navigator.serviceWorker to register.
-function registrations({ protocol, stickyAPI }) {
+function registrations({ protocol, stickyAPI, stickyNative }) {
   const registered = [];
   const onLoad = [];
   const window = { addEventListener: (type, fn) => { if (type === 'load') onLoad.push(fn); } };
   if (stickyAPI) window.stickyAPI = {};
+  if (stickyNative) window.stickyNative = { platform: 'android' };
   const sandbox = {
     window, console,
     location: { protocol },
@@ -135,6 +136,11 @@ test('the desktop app never registers a service worker', () => {
   assert.deepEqual(registrations({ protocol: 'https:', stickyAPI: true }), []);
   // …or a file:// page without the bridge.
   assert.deepEqual(registrations({ protocol: 'file:' }), []);
+});
+
+test('the Android app never registers a service worker', () => {
+  // Capacitor serves the page from https://localhost, which looks like the web.
+  assert.deepEqual(registrations({ protocol: 'https:', stickyNative: true }), []);
 });
 
 /* ---------------- precache ---------------- */
