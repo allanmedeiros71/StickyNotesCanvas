@@ -18,6 +18,13 @@ So:
   dev-only. A new library gets vendored into `vendor/` and script-tagged.
 - There is nothing to compile. Edit a `.jsx` file, restart the app, done.
 - Syntax errors won't be caught by a bundler — run the tests.
+- The one optional exception is `npm run build:web`, which writes a
+  precompiled copy of the web app to `www/` for phones and native wrappers:
+  the same vendored Babel, with the options it uses in the browser, compiles
+  the `.jsx` files once, and the page loads a single `app.bundle.js` instead of
+  transpiling on every launch. Nothing in the repository root depends on it;
+  the desktop app and the GitHub Pages demo still run from source.
+  (`build-web.mjs`, `tests/build-web.test.mjs`)
 
 Files, in the order they matter:
 
@@ -31,6 +38,7 @@ Files, in the order they matter:
 | `hooks.jsx` | persistence, undo/redo, update check |
 | `storage.js` | disk I/O for notes and images (main process only) |
 | `sw.js`, `manifest.webmanifest` | web build only: installing the GitHub Pages demo as an app, and opening it offline |
+| `build-web.mjs` | optional precompiled web build into `www/` (no Babel in the browser) |
 
 ## Where user data lives
 

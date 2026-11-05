@@ -13,3 +13,6 @@ docs/superpowers/
 flatpak/.flatpak-builder/
 flatpak/build-dir/
 flatpak/generated-sources.json
+
+# Precompiled web build (npm run build:web)
+www/

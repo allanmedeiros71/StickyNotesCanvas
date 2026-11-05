@@ -14,11 +14,13 @@
     "build:icons": "node build-icons.mjs",
     "build": "electron-builder",
     "build:linux": "electron-builder --linux",
-    "build:mac": "electron-builder --mac"
+    "build:mac": "electron-builder --mac",
+    "build:web": "node build-web.mjs"
   },
   "devDependencies": {
     "electron": "^32.0.0",
     "electron-builder": "^25.0.0",
+    "esbuild": "^0.25.12",
     "sharp": "^0.33.0"
   },
   "build": {
