@@ -39,6 +39,7 @@ Files, in the order they matter:
 | `storage.js` | disk I/O for notes and images (main process only) |
 | `sw.js`, `manifest.webmanifest` | web build only: installing the GitHub Pages demo as an app, and opening it offline |
 | `build-web.mjs` | optional precompiled web build into `www/` (no Babel in the browser) |
+| `capacitor-bridge.js`, `android/` | Android app (Capacitor): see below |
 
 ## Where user data lives
 
@@ -103,6 +104,31 @@ What to do about it:
 `.githooks/` enforces both gates locally (`git config core.hooksPath .githooks`).
 `--no-verify` exists for when the flake blocks a push; use it knowing what you
 skipped.
+
+## The Android app
+
+`android/` is a [Capacitor](https://capacitorjs.com) project that wraps the
+precompiled web build (`www/`). The page is the same one the web demo runs —
+no `window.stickyAPI` — plus `capacitor-bridge.js`, which build-web.mjs loads
+ahead of the app. Inside the native shell (and only there) it sets three
+globals the web code checks for:
+
+| Global | Used by | What it does on Android |
+|---|---|---|
+| `window.stickyNative` | `MobileDemoBanner`, the service-worker guard in `index.html` | no "web demo" banner, no service worker |
+| `window.stickyWebStore` | `useStickyStore` (`hooks.jsx`) | notes in `notes.json` in the app's private files dir, written tmp-then-swap |
+| `window.stickyShareFile` | `downloadBlob` (`utils.jsx`) | exports go to the system share sheet |
+
+Build it (needs JDK 21 and the Android SDK, e.g. via Android Studio):
+
+```bash
+npm run android:sync     # build:web + copy www/ into android/
+npm run android:open     # open in Android Studio, run on a device
+npm run android:apk      # or: debug APK in android/app/build/outputs/apk/debug/
+```
+
+Launcher icons and the launch screen come from `build/icon*.svg`:
+`node build-android-icons.mjs`. (`tests/capacitor-bridge.test.mjs`)
 
 ## Contracts that are easy to break
 

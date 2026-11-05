@@ -15,9 +15,17 @@
     "build": "electron-builder",
     "build:linux": "electron-builder --linux",
     "build:mac": "electron-builder --mac",
-    "build:web": "node build-web.mjs"
+    "build:web": "node build-web.mjs",
+    "android:sync": "npm run build:web && cap sync android",
+    "android:open": "cap open android",
+    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
     "electron": "^32.0.0",
     "electron-builder": "^25.0.0",
     "esbuild": "^0.25.12",
